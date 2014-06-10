@@ -23,9 +23,21 @@
             }
         }
     },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.0.x-dev"
+        }
+    },
     "require": {
+        "shinymayhem/shiny-lib": "0.*",
 		"zendframework/zendframework": "2.*"
     },
+    "repositories": [
+        {
+            "url": "https://github.com/shinymayhem/shiny-lib",
+            "type": "git"
+        }
+	}
     "autoload": {
         "psr-0": {
             "ShinyRest": "src"
