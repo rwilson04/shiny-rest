@@ -37,7 +37,7 @@
             "url": "https://github.com/shinymayhem/shiny-lib",
             "type": "git"
         }
-	}
+	},
     "autoload": {
         "psr-0": {
             "ShinyRest": "src"
