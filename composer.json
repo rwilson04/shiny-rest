@@ -15,7 +15,7 @@
         }
     },
     "require": {
-        "shinymayhem/shiny-lib": "0.0.*",
+        "shinymayhem/shiny-lib": "dev-master",
 		"zendframework/zendframework": "2.*"
     },
     "repositories": [
