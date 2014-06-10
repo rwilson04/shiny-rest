@@ -8,28 +8,14 @@
             "email": "reese@shinymayhem.com"
         }
     ],
-    "repositories": {
-        "shiny-rest": {
-            "type": "package",
-            "package": {
-                "name": "shinymayhem/shiny-rest",
-                "description": "REST with JSON, XML and api-problem style errors",
-                "version": "0.0.1",
-                "source": {
-                    "url": "https://github.com/shinymayhem/shiny-rest",
-                    "type": "git",
-                    "reference": "0.0.1"
-                }
-            }
-        }
-    },
+
     "extra": {
         "branch-alias": {
             "dev-master": "0.0.x-dev"
         }
     },
     "require": {
-        "shinymayhem/shiny-lib": "0.*",
+        "shinymayhem/shiny-lib": "0.0.*",
 		"zendframework/zendframework": "2.*"
     },
     "repositories": [
