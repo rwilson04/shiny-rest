@@ -1,0 +1,37 @@
+{
+    "name": "shinymayhem/shiny-rest",
+    "description": "REST with JSON, XML and api-problem style errors",
+    "license": "Apache 2.0",
+    "authors": [
+        {
+            "name": "Reese Wilson",
+            "email": "reese@shinymayhem.com"
+        }
+    ],
+    "repositories": {
+        "shiny-rest": {
+            "type": "package",
+            "package": {
+                "name": "shinymayhem/shiny-rest",
+                "description": "REST with JSON, XML and api-problem style errors",
+                "version": "0.0.1",
+                "source": {
+                    "url": "https://github.com/shinymayhem/shiny-rest",
+                    "type": "git",
+                    "reference": "0.0.1"
+                }
+            }
+        }
+    },
+    "require": {
+		"zendframework/zendframework": "2.*"
+    },
+    "autoload": {
+        "psr-0": {
+            "ShinyRest": "src"
+        },
+		"classmap": [
+			"Module.php"
+		]
+    }
+}
