@@ -18,12 +18,20 @@
         "shinymayhem/shiny-lib": "dev-master",
 		"zendframework/zendframework": "2.*"
     },
-    "repositories": [
+     "repositories": [
         {
-            "url": "https://github.com/shinymayhem/shiny-lib",
-            "type": "git"
+            "type": "package",
+            "package": {
+                "name": "shinymayhem/shiny-lib",
+                "version": "0.0.2",
+                "source": {
+                    "url": "https://github.com/shinymayhem/shiny-lib",
+                    "type": "git",
+                    "reference": "0.0.2"
+                }
+            }
         }
-	],
+    ],
     "autoload": {
         "psr-0": {
             "ShinyRest": "src"
