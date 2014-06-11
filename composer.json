@@ -20,7 +20,7 @@
     },
      "repositories": [
         {
-            "type": "package",
+            "type": "vcs",
             "package": {
                 "name": "shinymayhem/shiny-lib",
                 "version": "0.0.2",
