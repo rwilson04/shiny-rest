@@ -18,7 +18,7 @@
         "shinymayhem/shiny-lib": "0.0.2",
         "php": ">=5.4",
 	"zendframework/zendframework": "2.*"
-    }
+    },
     "autoload": {
         "psr-0": {
             "ShinyRest": "src"
