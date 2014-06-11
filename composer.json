@@ -15,14 +15,13 @@
         }
     },
     "require": {
-        "shinymayhem/shiny-lib": "dev-master",
+        "shinymayhem/shiny-lib": "0.0.2",
 	"zendframework/zendframework": "2.*"
     },
      "repositories": [
         {
             "url": "https://github.com/shinymayhem/shiny-lib",
-            "type": "git",
-            "reference": "0.0.2"
+            "type": "git"
 
         }
     ],
