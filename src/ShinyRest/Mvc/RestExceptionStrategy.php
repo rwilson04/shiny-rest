@@ -169,13 +169,8 @@ class RestExceptionStrategy extends AbstractListenerAggregate
             $type  = 'json';
         } else {
             //don't know what to do, just do a 404 and a blank page
-            $eventManager->attach(
-                MvcEvent::EVENT_FINISH,
-                function ($event)  {
-                    $event->getResponse()->setStatusCode(404);
-                }
-            );
-            return;
+            $model = $sm->get('ViewModel/Json');
+            $type  = 'json';
         }
 
         ini_set('html_errors', 0);
