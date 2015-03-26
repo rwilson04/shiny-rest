@@ -246,28 +246,12 @@ abstract class AbstractRestfulController extends \Zend\Mvc\Controller\AbstractRe
 
 
     /*
-     * Override request type if specified in header
      *
      * @param MvcEvent $e
      *
      * @return mixed
      */
     public function onDispatch(MvcEvent $e) {
-        $request = $e->getRequest();
-        $headers = $request->getHeaders();
-        $method  = $headers->get('X-HTTP-Method-Override');
-        if ($method) {
-            $request->setMethod($method->getFieldValue());
-        }
-        $response = parent::onDispatch($e);
-        // Override ZF2 behavior which doesn't return content for OPTIONS method
-        $request = $e->getRequest();
-        $method = strtolower($request->getMethod());
-        if ($method === "options") {
-            $e->setResult($this->options());
-            return $e;
-        }
-
         //get config
         $application  = $e->getApplication();
         $services     = $application->getServiceManager();
@@ -282,6 +266,24 @@ abstract class AbstractRestfulController extends \Zend\Mvc\Controller\AbstractRe
         } else {
             $this->config   = array();
         }
+
+        // Override request type if specified in header
+        $request = $e->getRequest();
+        $headers = $request->getHeaders();
+        $method  = $headers->get('X-HTTP-Method-Override');
+        if ($method) {
+            $request->setMethod($method->getFieldValue());
+        }
+        $response = parent::onDispatch($e);
+        echo "1";
+        // Override ZF2 behavior which doesn't return content for OPTIONS method
+        $request = $e->getRequest();
+        $method = strtolower($request->getMethod());
+        if ($method === "options") {
+            $e->setResult($this->options());
+            return $e;
+        }
+
         return $response;
     }
 
