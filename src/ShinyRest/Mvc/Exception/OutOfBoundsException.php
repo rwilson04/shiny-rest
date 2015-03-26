@@ -2,7 +2,7 @@
 
 namespace ShinyRest\Mvc\Exception;
 
-class OutOfBoundsException extends \ShinyRest\Exception\OutOfBoundsException 
-	implements ExceptionInterface
+class OutOfBoundsException extends \ShinyRest\Exception\OutOfBoundsException
+    implements ExceptionInterface
 {
 }

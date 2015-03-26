@@ -2,7 +2,7 @@
 
 namespace ShinyRest\Mvc\Exception;
 
-class InvalidArgumentException extends \ShinyRest\Exception\InvalidArgumentException 
-	implements ExceptionInterface
+class InvalidArgumentException extends \ShinyRest\Exception\InvalidArgumentException
+    implements ExceptionInterface
 {
 }
