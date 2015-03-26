@@ -8,9 +8,26 @@ use Zend\EventManager\EventManagerInterface;
 use Zend\EventManager\AbstractListenerAggregate;
 use Zend\Mvc\MvcEvent;
 use Zend\Mvc\Application;
+use Zend\ServiceManager\ServiceManager;
 
 class RestExceptionStrategy extends AbstractListenerAggregate
 {
+
+    /**
+     * @var object application configuration service
+     */
+    protected $config;
+
+    /**
+     * @var MvcEvent
+     */
+    protected $event;
+
+    /**
+     * @var ServiceManager
+     */
+    protected $services;
+
     /**
      * Attach events
      *
@@ -19,12 +36,23 @@ class RestExceptionStrategy extends AbstractListenerAggregate
      * @return void
      */
     public function attach(EventManagerInterface $events) {
+        $this->listeners[] = $events->attach(MvcEvent::EVENT_BOOTSTRAP, array($this, 'onBootstrap'), 10000);
         $this->listeners[] = $events->attach(MvcEvent::EVENT_DISPATCH_ERROR, array($this, 'handleException'), 100);
         $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER_ERROR, array($this, 'handleException'), 100);
         $this->listeners[] = $events->attach(MvcEvent::EVENT_FINISH, array($this, 'unsetResultException'));
 
         //$sharedManager     = $events->getSharedManager();
         //$this->listeners[] = $sharedManager->attach('*', 'displayRestError', array($this, 'unsetResultException'));
+    }
+
+    /**
+     * Prepares the view layer
+     *
+     * @param  $event
+     * @return void
+     */
+    public function onBootstrap($event)
+    {
     }
 
     /**
@@ -35,6 +63,21 @@ class RestExceptionStrategy extends AbstractListenerAggregate
      * @return void
      */
     public function handleException(MvcEvent $e) {
+        $application  = $e->getApplication();
+        $services     = $application->getServiceManager();
+        $config       = $services->get('Config');
+        $this->services = $services;
+        if (
+            isset($config['view_manager'])
+            && (is_array($config['view_manager'])
+            || $config['view_manager'] instanceof ArrayAccess)
+        ) {
+            $this->config   = $config['view_manager'];
+        } else {
+            $this->config   = array();
+        }
+        $this->event    = $e;
+
         //turn of html errors during testing (console) and for curl requests
         $ua = $this->getUserAgent();
         if (APPLICATION_ENV === 'testing' || substr($ua, 0, 4) == "curl") {
@@ -43,9 +86,9 @@ class RestExceptionStrategy extends AbstractListenerAggregate
 
         $error = $e->getError();
         switch ($error) {
+            case Application::ERROR_ROUTER_NO_MATCH:
             case Application::ERROR_CONTROLLER_NOT_FOUND:
             case Application::ERROR_CONTROLLER_INVALID:
-            case Application::ERROR_ROUTER_NO_MATCH:
                 $this->handleRouteNotFound($e);
                 break;
             case Application::ERROR_EXCEPTION:
@@ -54,7 +97,6 @@ class RestExceptionStrategy extends AbstractListenerAggregate
                 $this->formatException($e);
                 $this->attachErrorLogger($e);
         }
-
     }
 
     /**
@@ -103,12 +145,6 @@ class RestExceptionStrategy extends AbstractListenerAggregate
         }
         //$error = $e->getParam('error');
         $error = $e->getError();
-        if ($reason != "error-router-no-match"
-            && $error != "error-router-no-match"
-        ) {
-            //we are only interested in routing errors here
-            return;
-        }
         $request      = $e->getRequest();
         $accept       = "";
         $acceptObject = $request->getHeaders()->get('Accept');
@@ -141,23 +177,65 @@ class RestExceptionStrategy extends AbstractListenerAggregate
             );
             return;
         }
+
         ini_set('html_errors', 0);
         $model->setTerminal(true);
         $protocol    = $this->getProtocol();
-        $description = $protocol . $_SERVER['HTTP_HOST']
-            . "/errors/101010";
-        $result      = array(
-            'title' => 'Invalid URL',
-            'httpStatus' => 404,
-            'describedBy' => $description,
-        );
+
+        $displayExceptions     = false;
+        $displayNotFoundReason = false;
+
+        if (isset($this->config['display_exceptions'])) {
+            $displayExceptions = $this->config['display_exceptions'];
+        }
+        if (isset($this->config['display_not_found_reason'])) {
+            $displayNotFoundReason = $this->config['display_not_found_reason'];
+        }
+        switch ($error) {
+            case Application::ERROR_CONTROLLER_NOT_FOUND:
+            case Application::ERROR_CONTROLLER_INVALID:
+                $result      = array(
+                    'title' => 'Internal Server Error',
+                    'httpStatus' => 500,
+                );
+                if ($displayExceptions || $displayNotFoundReason) {
+                    $result      = array(
+                        'title' => 'Invalid controller',
+                        'httpStatus' => 500,
+                        'controller' => $e->getController(),
+                        'controllerClass' => $e->getControllerClass(),
+                    );
+                }
+                break;
+            case Application::ERROR_ROUTER_NO_MATCH:
+                $description = $protocol . $_SERVER['HTTP_HOST']
+                    . "/errors/101010";
+                $result      = array(
+                    'title' => 'Invalid URL',
+                    'httpStatus' => 404,
+                    'describedBy' => $description,
+                );
+                break;
+            default:
+                //if it is something else, don't know what to do
+                $description = $protocol . $_SERVER['HTTP_HOST']
+                    . "/errors/201011";
+                $result      = array(
+                    'title' => 'Unknown error',
+                    'httpStatus' => 500,
+                    'describedBy' => $error,
+                    'exception' => $e->getParam('exception'),
+                );
+        }
+
         $model->setVariables($result);
         $model->setTerminal(true);
         $e->setResult($model);
         $e->setViewModel($model);
 
         $ua = $this->getUserAgent();
-        if (!stristr($accept, 'text/html')) {
+        //if not in browser, change content type to api-problem standard
+        if (stristr($accept, 'text/html') === false) {
             //workaround to set content-type *after* it is set
             //by the view model
             $eventManager->attach(
@@ -221,7 +299,15 @@ class RestExceptionStrategy extends AbstractListenerAggregate
             //ensure that 'content-type' header is set to api-problem
             $ua                = $this->getUserAgent();
             $changeContentType = true;
-            if (stristr($ua, 'chrome')) {
+            $accept            = "";
+            $request           = $e->getTarget()->getRequest();
+            $acceptObject = $request->getHeaders()->get('Accept');
+            if (is_object($acceptObject)) {
+                //no headers found...
+                $accept = $acceptObject->toString();
+            }
+            //if in browser, keep content type compatible
+            if (stristr($accept, 'text/html') !== false) {
                 $changeContentType = false;
             }
             if ($changeContentType) {
@@ -230,9 +316,11 @@ class RestExceptionStrategy extends AbstractListenerAggregate
             }
         } else {
             //default to zf2's exception strategy for display
-            $sm                = $e->getApplication()->getServiceManager();
-            $exceptionStrategy = $sm->get('ExceptionStrategy');
-            $exceptionStrategy->prepareExceptionViewModel($e);
+            $error = $e->getParam('exception');
+            $e->setResult(json_encode($error));
+            //$sm                = $e->getApplication()->getServiceManager();
+            //$exceptionStrategy = $sm->get('ExceptionStrategy');
+            //$exceptionStrategy->prepareExceptionViewModel($e);
         }
     }
 
@@ -338,7 +426,7 @@ class RestExceptionStrategy extends AbstractListenerAggregate
         $content         = $e->getRequest()->getContent();
         $sm              = $e->getApplication()->getServiceManager();
         do {
-            $sm->get('Logger')->crit(
+            $sm->get('RestErrorLogger')->crit(
                 sprintf(
                     "%s Code:%s\nFile:%s:line %d\nMessage:".
                     "%s\n%s\n\n_SERVER:\n%s\n\n\nRequest headers:\n%s\n\n".

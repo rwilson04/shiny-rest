@@ -1,10 +1,11 @@
 <?php
 namespace ShinyRest;
 
-use \Zend\Mvc\MvcEvent;
-use \Zend\ModuleManager\Feature\DependencyIndicatorInterface;
-use \ShinyRest\Mvc\Controller\AbstractRestfulController;
-use \ShinyRest\Mvc\RestViewModelAwareInterface;
+use Zend\Mvc\MvcEvent;
+use Zend\ModuleManager\Feature\DependencyIndicatorInterface;
+use Zend\Mvc\ModuleRouteListener;
+use ShinyRest\Mvc\Controller\AbstractRestfulController;
+use ShinyRest\Mvc\RestViewModelAwareInterface;
 
 class Module implements DependencyIndicatorInterface
 {
@@ -13,8 +14,16 @@ class Module implements DependencyIndicatorInterface
     }
 
     public function onBootstrap(\Zend\Mvc\MvcEvent $e) {
+        //use zf2 modules
+        $eventManager        = $e->getApplication()->getEventManager();
+        $moduleRouteListener = new ModuleRouteListener();
+        $moduleRouteListener->attach($eventManager);
+
+        //custom exception handling
         $this->attachRestExceptionStrategy($e);
         $this->correct204Response($e);
+
+        //set up request logger
         $this->logRestRequests($e);
     }
 
@@ -113,6 +122,12 @@ class Module implements DependencyIndicatorInterface
             //  },
             //),
             'factories'=>array(
+                'RestErrorLogger' => function ($sm) {
+                    $logger = new \Zend\Log\Logger();
+                    $nullWriter = new \Zend\Log\Writer\Null();
+                    $logger->addWriter($nullWriter);
+                    return $logger;
+                },
                 'RestLog' => function ($sm) {
                     $logger = new \Zend\Log\Logger();
                     $nullWriter = new \Zend\Log\Writer\Null();

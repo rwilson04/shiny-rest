@@ -143,6 +143,7 @@ class RestLogger extends AbstractListenerAggregate
                 'headers'
             );
             $logger          = $serviceLocator->get('RestLog');
+            $logString       = "Request: \n";
             $logString      .= print_r($data, true);
             $logString       = preg_replace(
                 '/([\r\n])/',
