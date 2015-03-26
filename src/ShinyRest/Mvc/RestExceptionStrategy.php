@@ -157,7 +157,7 @@ class RestExceptionStrategy extends AbstractListenerAggregate
         $e->setViewModel($model);
 
         $ua = $this->getUserAgent();
-        if (!stristr($ua, 'debug')) {
+        if (!stristr($accept, 'text/html')) {
             //workaround to set content-type *after* it is set
             //by the view model
             $eventManager->attach(
